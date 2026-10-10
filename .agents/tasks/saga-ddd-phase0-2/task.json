@@ -1,0 +1,7 @@
+{
+  "task_id": "task-saga-ddd-phase0-2",
+  "task_description": "Build Phases 0-2 of the distributed order-processing system (DDD + Saga orchestration + Transactional Outbox/Inbox) in the existing OrderProcess .NET 9 solution: runnable docker infra + central package management (pinning MassTransit 8.5.11), EF Core Outbox/Inbox in all three bounded contexts with the Inventory dual-write defect fixed, and the OrderSaga state machine host coordinating ReserveStock -> ProcessPayment -> ConfirmOrder with a PaymentFailed -> ReleaseStock compensation branch. Scope is Phases 0, 1, 2 ONLY; a human-review pause follows before any Phase 3 work.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

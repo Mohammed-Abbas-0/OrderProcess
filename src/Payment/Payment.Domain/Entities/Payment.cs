@@ -27,13 +27,15 @@ public class Payment
         return new Payment(Guid.NewGuid(), orderId, amount);
     }
 
-    // Simulated processing: 90% success rate, عشان نقدر نختبر الـ Compensation بعدين
+    // قرار الدفع حتمي (Deterministic): النتيجة دالة خالصة في المدخلات.
+    // ينجح الدفع إلا إذا طُلب إفشاله صراحةً (forceFail) بناءً على حدّ المبلغ في الـ consumer.
+    // أزلنا العشوائية (Random) نهائياً حتى يصبح سلوك الـ Retry/Circuit Breaker قابلاً لإعادة الإنتاج.
     public bool Process(bool forceFail = false)
     {
         if (Status != PaymentStatus.Pending)
             throw new DomainException("Only a pending payment can be processed.");
 
-        var success = !forceFail && Random.Shared.Next(1, 11) <= 9;
+        var success = !forceFail;
 
         if (success)
         {

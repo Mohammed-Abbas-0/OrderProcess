@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BuildingBlocks.Observability</RootNamespace>
+  </PropertyGroup>
+
+  <!-- اللبنة تستعمل أنواع ASP.NET Core (WebApplication/HttpContext/Health Checks)، فنشير لإطار العمل. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <!-- لبنة مشتركة للمراقبة: تُستخدم من المضيفات الأربعة لتوحيد التسجيل المُهيكَل (Serilog)،
+       والتتبّع الموزّع (OpenTelemetry: MassTransit + EF Core + ASP.NET Core)، وإثراء الـ CorrelationId. -->
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" />
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
+  </ItemGroup>
+
+</Project>

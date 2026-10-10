@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Ordering.Domain.Entities;
 
 namespace Ordering.Infrastructure.Context;
@@ -20,9 +21,21 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
             builder.OwnsMany(o => o.Items, item =>
             {
                 item.WithOwner().HasForeignKey("OrderId");
-                item.HasKey(i => i.Id); 
+                item.HasKey(i => i.Id);
+                // تعيين صريح لخصائص القراءة-فقط للـ OrderItem حتى تُحفَظ فعلياً في الأعمدة
+                // (بدون هذا التعيين لا يُنشئ EF أعمدة ProductId/UnitPrice/Quantity فتُفقَد بيانات البند).
+                item.Property(i => i.ProductId);
+                item.Property(i => i.UnitPrice);
+                item.Property(i => i.Quantity);
             });
         });
+
+        // جداول نمط Outbox/Inbox الخاصة بـ MassTransit:
+        // Inbox: تمنع المعالجة المكرّرة للرسائل (idempotency) عبر إزالة التكرار بالـ MessageId.
+        // Outbox: تضمن نشر الرسالة ضمن نفس المعاملة التي تحفظ تغيير قاعدة البيانات (نشر معاملاتي).
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
     }
 
 }

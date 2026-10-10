@@ -1,0 +1,47 @@
+# قرار التصميم: مثيل PostgreSQL واحد يستضيف أربع قواعد بيانات منطقية
+# (orderingdb, inventorydb, paymentdb, sagadb) بدلاً من أربعة مثيلات منفصلة،
+# لتبسيط التشغيل محلياً مع الحفاظ على عزل كل سياق محدود (bounded context) في قاعدة بيانات خاصة به.
+# يتم إنشاء القواعد الأربع عبر سكربت التهيئة في ./docker/postgres-init.
+# RabbitMQ يُستخدم كناقل رسائل (transport) مع واجهة الإدارة guest/guest.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: saga_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      # منفذ المضيف 5433 لتجنّب تعارض مع مشروع آخر يستخدم 5432؛ المنفذ الداخلي يبقى 5432
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # سكربتات التهيئة تُنفَّذ تلقائياً عند أول إقلاع للقاعدة لإنشاء القواعد الأربع
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: saga_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      # منافذ المضيف 5673/15673 لتجنّب تعارض مع مشروع آخر؛ المنافذ الداخلية تبقى قياسية
+      - "5673:5672"    # منفذ بروتوكول AMQP (المضيف 5673)
+      - "15673:15672"  # واجهة الإدارة (http://localhost:15673)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

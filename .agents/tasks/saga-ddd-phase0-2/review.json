@@ -1,0 +1,30 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    {
+      "severity": "minor",
+      "location": "src/Payment/Payment.Domain/Entities/Payment.cs + src/Payment/Payment.Api/Consumers/ProcessPaymentConsumer.cs",
+      "detail": "The deterministic fail switch (Payment:FailAmountThreshold, default 1000) correctly forces compensation when Amount >= threshold, but below the threshold Payment.Process keeps its 90% random success simulation. A sub-threshold 'happy path' order can therefore still fail ~10% of the time and divert into compensation, so the happy path is not strictly reproducible.",
+      "suggestion": "Make success deterministic below the threshold for the demo: only apply the Random.Shared roll when no threshold switch is engaged, or add an explicit force-success mode so the happy path is 100% reproducible."
+    },
+    {
+      "severity": "minor",
+      "location": "src/Saga/OrderProcess.Saga/StateMachine/OrderStateMachine.cs",
+      "detail": "StockReleasedEvent is declared and correlated by CorrelationId but is never handled in any During/When. The PaymentFailed compensation branch publishes ReleaseStock + CancelOrder and finalizes immediately, while an inline Arabic comment claims the saga waits for StockReleased before finalizing. The comment is stale. Stock is still restored because ReleaseStockConsumer processes ReleaseStock independently, so this is dead code/comment, not a functional defect.",
+      "suggestion": "Either observe StockReleased (e.g. keep the instance alive through a short compensation state and finalize on StockReleased) to make the comment true, or remove the unused StockReleasedEvent declaration and correct the comment."
+    },
+    {
+      "severity": "minor",
+      "location": "src/Contracts/Events/Events.cs + src/ordering/Ordering.Api/Program.cs (POST /orders/{id}/submit)",
+      "detail": "OrderSubmitted carries only the first order line's ProductId/Quantity (firstItem). For a multi-line order the saga reserves and later releases stock for only the first product; the remaining lines are never reserved. Acceptable for a single-line demo but a correctness gap for real multi-item orders. Documented as a deviation in FEAT-003 findings.",
+      "suggestion": "Document the single-line limitation explicitly, or evolve the contract/saga to carry a line collection and reserve/release per line."
+    },
+    {
+      "severity": "minor",
+      "location": "src/ordering/Ordering.Domain/Enums/OrderStatus.cs + saga StockReservationFailed path",
+      "detail": "The spec's flow lists 'order Rejected (terminal)' for StockReservationFailed, but OrderStatus has no Rejected value (Draft/Submitted/Confirmed/Cancelled). The implementation cancels the order via the same CancelOrder command on both the reservation-failure and payment-failure paths. Documented and accepted by the plan.",
+      "suggestion": "No action required unless the 'Rejected' terminal label must be honored literally; if so, extend the enum and add a distinct reject command/state."
+    }
+  ],
+  "summary": "Phases 0-2 fully satisfy the spec. Central package management pins MassTransit at 8.5.11 across every project (Ordering.Api and Payment.Api flipped down from 9.2.3; EF package correctly referenced as MassTransit.EntityFrameworkCore), EF Core unified at 9.0.8, and the solution builds clean (0 warnings / 0 errors) with OrderProcess.Saga in the solution. docker-compose brings up postgres:16 (one instance, four logical DBs orderingdb/inventorydb/paymentdb/sagadb via init script) + rabbitmq:3-management. The transactional outbox + inbox are wired in all three contexts and the saga at both the bus-outbox and consumer-outbox levels (AddEntityFrameworkOutbox UsePostgres+UseBusOutbox plus a UseEntityFrameworkOutbox configure-endpoints callback), and the Inventory dual-write is genuinely gone (every branch publishes then a single SaveChangesAsync). The OrderStateMachine implements the full flow including the PaymentFailed->ReleaseStock->Cancelled compensation branch, correlated by CorrelationId, persisted in its own sagadb with an xmin concurrency token and an InitialSaga migration. POST /orders/{id}/submit, the OrderStatusConsumer (Confirm/Cancel), and the Payment ProcessPaymentConsumer with a deterministic fail switch all exist; the temporary /test/publish-reserve endpoint is removed; the saga references Contracts only; new comments are Arabic. The recorded verification evidence proves the happy and compensation paths end-to-end. Only minor, non-blocking observations remain: the happy path keeps a 10% random payment failure below the threshold (not strictly deterministic), the saga declares but never handles StockReleased (stale comment), OrderSubmitted carries only the first order line, and there is no distinct Rejected state. None block Phase 2 sign-off."
+}

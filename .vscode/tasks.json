@@ -1,0 +1,23 @@
+{
+  // مهام البناء التي تعتمد عليها إعدادات التصحيح (launch.json).
+  // "build-sln" يبني الحل كامل مرة واحدة قبل تشغيل الأربع خدمات.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-sln",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/OrderProcess.sln",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

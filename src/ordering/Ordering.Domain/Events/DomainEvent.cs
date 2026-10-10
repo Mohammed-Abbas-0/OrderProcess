@@ -10,6 +10,12 @@ public sealed record OrderCancelled(Guid OrderId) : IDomainEvent
     public DateTime OccurredOn { get; } = DateTime.UtcNow;
 }
 
+// حدث رفض الطلب: فشل عمل نهائي قبل أي تعويض (مثل فشل حجز المخزون). متمايز عن OrderCancelled.
+public sealed record OrderRejected(Guid OrderId, string Reason) : IDomainEvent
+{
+    public DateTime OccurredOn { get; } = DateTime.UtcNow;
+}
+
 public sealed record OrderConfirmed(Guid OrderId, Guid CustomerId, decimal Total) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = DateTime.UtcNow;

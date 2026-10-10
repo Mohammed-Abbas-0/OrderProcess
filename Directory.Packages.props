@@ -1,0 +1,50 @@
+<Project>
+
+  <!-- الإدارة المركزية لإصدارات الحزم: تُثبَّت الإصدارات هنا وتُزال سمة Version من كل PackageReference في المشاريع. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MassTransit مثبّت على 8.5.11 لجميع المشاريع (يخفض Ordering.Api و Payment.Api من 9.2.3) -->
+    <PackageVersion Include="MassTransit" Version="8.5.11" />
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="8.5.11" />
+    <!-- حزمة تكامل EF Core الخاصة بـ MassTransit؛ المعرّف الصحيح هو MassTransit.EntityFrameworkCore (مساحة الأسماء هي EntityFrameworkCoreIntegration) -->
+    <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.5.11" />
+
+    <!-- EF Core موحّد على 9.0.8 -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8" />
+
+    <!-- موفّر PostgreSQL لـ EF Core -->
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+
+    <!-- دعم OpenApi لمشاريع الـ Api -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.12" />
+
+    <!-- حزم الاختبار (xUnit) لمشروع اختبار التزامن المتفائل على المخزون -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <!-- تثبيت EF Core Relational على 9.0.8 لحسم تعارض نسخة ينسحبها Test SDK مؤقتاً (9.0.1) -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.8" />
+
+    <!-- ========================= المرحلة 4: المراقبة (Observability) ========================= -->
+    <!-- تسجيل مُهيكَل (Structured Logging) عبر Serilog لكل مضيف، مع إثراء الـ CorrelationId -->
+    <PackageVersion Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+
+    <!-- تتبّع موزّع (Distributed Tracing) عبر OpenTelemetry: MassTransit + EF Core + ASP.NET Core -> Console -->
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
+    <!-- تجهيز EF Core متاح كإصدار beta فقط من المصدر الرسمي (لا توجد نسخة مستقرة) -->
+    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.12" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.9.0" />
+
+    <!-- فحص صحة Postgres. فحص صحة RabbitMQ يأتي جاهزاً من MassTransit (bus health check)،
+         فيغطّي اتصال الوسيط الذي يستخدمه التطبيق فعلاً دون الحاجة لحزمة إضافية أو إدارة اتصال منفصل. -->
+    <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>

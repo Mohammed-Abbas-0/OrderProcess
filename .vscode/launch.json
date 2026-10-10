@@ -1,0 +1,89 @@
+{
+  // إعدادات التصحيح (Debug) للنظام الموزّع:
+  // - أربع إعدادات مفردة، واحدة لكل خدمة (Ordering / Saga / Inventory / Payment).
+  // - إعداد مركّب "All services (Saga system)" يشغّل الأربعة معاً بضغطة واحدة،
+  //   فتعمل نقاط التوقّف (breakpoints) في كل عملية على حدة عند وصول رسالتها.
+  //
+  // ملاحظة مهمّة: شغّل البنية التحتية أولاً:  docker compose up -d
+  // وطبّق الهجرات مرة واحدة إن لم تكن طُبّقت (انظر README).
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Ordering.Api",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-sln",
+      "program": "${workspaceFolder}/src/ordering/Ordering.Api/bin/Debug/net9.0/Ordering.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/ordering/Ordering.Api",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5173"
+      }
+    },
+    {
+      "name": "OrderProcess.Saga",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-sln",
+      "program": "${workspaceFolder}/src/Saga/OrderProcess.Saga/bin/Debug/net9.0/OrderProcess.Saga.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Saga/OrderProcess.Saga",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5280"
+      }
+    },
+    {
+      "name": "Inventory.Api",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-sln",
+      "program": "${workspaceFolder}/src/Inventory/Inventory.Api/bin/Debug/net9.0/Inventory.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Inventory/Inventory.Api",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5197"
+      }
+    },
+    {
+      "name": "Payment.Api",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-sln",
+      "program": "${workspaceFolder}/src/Payment/Payment.Api/bin/Debug/net9.0/Payment.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Payment/Payment.Api",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5268"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      // شغّل الأربع خدمات معاً للتصحيح الموزّع. ابدأ من هنا.
+      "name": "All services (Saga system)",
+      "configurations": [
+        "Ordering.Api",
+        "OrderProcess.Saga",
+        "Inventory.Api",
+        "Payment.Api"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "group": "saga",
+        "order": 1
+      }
+    }
+  ]
+}

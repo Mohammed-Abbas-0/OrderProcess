@@ -52,10 +52,20 @@ public class Order
 
     public void Cancel()
     {
-        if (Status is OrderStatus.Confirmed or OrderStatus.Cancelled)
+        if (Status is OrderStatus.Confirmed or OrderStatus.Cancelled or OrderStatus.Rejected)
             throw new DomainException($"A {Status} order cannot be cancelled.");
         Status = OrderStatus.Cancelled;
         _domainEvents.Add(new OrderCancelled(Id));
+    }
+
+    // رفض الطلب: حالة نهائية لفشل عمل لا يتطلّب تعويضاً (فشل حجز المخزون قبل أي حجز فعلي).
+    // متمايزة عن Cancel: لا يُفترض وجود مخزون محجوز نرجّعه، فالطلب لم يتجاوز مرحلة الحجز بنجاح.
+    public void Reject(string reason)
+    {
+        if (Status != OrderStatus.Submitted)
+            throw new DomainException("Only a submitted order can be rejected.");
+        Status = OrderStatus.Rejected;
+        _domainEvents.Add(new OrderRejected(Id, reason));
     }
 
     public void ClearDomainEvents() => _domainEvents.Clear();
