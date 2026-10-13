@@ -22,8 +22,6 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
             {
                 item.WithOwner().HasForeignKey("OrderId");
                 item.HasKey(i => i.Id);
-                // تعيين صريح لخصائص القراءة-فقط للـ OrderItem حتى تُحفَظ فعلياً في الأعمدة
-                // (بدون هذا التعيين لا يُنشئ EF أعمدة ProductId/UnitPrice/Quantity فتُفقَد بيانات البند).
                 item.Property(i => i.ProductId);
                 item.Property(i => i.UnitPrice);
                 item.Property(i => i.Quantity);

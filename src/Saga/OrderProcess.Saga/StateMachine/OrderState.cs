@@ -2,13 +2,9 @@ using MassTransit;
 
 namespace OrderProcess.Saga.StateMachine;
 
-// حالة نسخة الـ Saga المحفوظة في قاعدة بيانات sagadb.
-// CorrelationId هو مفتاح الربط (نعتمد اصطلاح CorrelationId = OrderId) وهو مفتاح الجدول الأساسي.
 public class OrderState : SagaStateMachineInstance
 {
     public Guid CorrelationId { get; set; }
-
-    // الحالة الحالية للـ state machine (Submitted/StockReserved/Paid/...).
     public string CurrentState { get; set; } = default!;
 
     public Guid OrderId { get; set; }

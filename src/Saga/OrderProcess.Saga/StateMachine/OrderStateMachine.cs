@@ -4,18 +4,15 @@ using MassTransit;
 
 namespace OrderProcess.Saga.StateMachine;
 
-// آلة الحالة التي تنسّق الـ Saga (Orchestration): تستقبل أحداث التكامل وتصدر الأوامر للسياقات.
-// التدفق: Submitted -> StockReserved -> Paid -> Confirmed، مع فرع تعويض عند فشل الدفع.
 public class OrderStateMachine : MassTransitStateMachine<OrderState>
 {
-    // الحالات الممكنة لنسخة الـ Saga.
+    // States
     public State Submitted { get; private set; } = default!;
     public State StockReserved { get; private set; } = default!;
     public State Paid { get; private set; } = default!;
-    // حالة انتقالية أثناء التعويض: ننتظر فيها تأكيد StockReleased قبل الإنهاء النهائي (Cancelled).
     public State Compensating { get; private set; } = default!;
 
-    // الأحداث (مربوطة بالـ CorrelationId القادم في كل رسالة).
+    // Events
     public Event<OrderSubmitted> OrderSubmitted { get; private set; } = default!;
     public Event<StockReserved> StockReservedEvent { get; private set; } = default!;
     public Event<StockReservationFailed> StockReservationFailedEvent { get; private set; } = default!;
@@ -25,10 +22,9 @@ public class OrderStateMachine : MassTransitStateMachine<OrderState>
 
     public OrderStateMachine()
     {
-        // خزّن اسم الحالة الحالية في عمود CurrentState.
         InstanceState(x => x.CurrentState);
 
-        // اربط كل حدث عبر CorrelationId (موجود على جميع عقود Contracts المستخدمة هنا).
+        // CorrelationId
         Event(() => OrderSubmitted, e => e.CorrelateById(m => m.Message.CorrelationId));
         Event(() => StockReservedEvent, e => e.CorrelateById(m => m.Message.CorrelationId));
         Event(() => StockReservationFailedEvent, e => e.CorrelateById(m => m.Message.CorrelationId));
@@ -36,7 +32,7 @@ public class OrderStateMachine : MassTransitStateMachine<OrderState>
         Event(() => PaymentFailedEvent, e => e.CorrelateById(m => m.Message.CorrelationId));
         Event(() => StockReleasedEvent, e => e.CorrelateById(m => m.Message.CorrelationId));
 
-        // (1) بدء الـ Saga: عند استلام OrderSubmitted نحفظ بيانات الطلب ونرسل أمر ReserveStock.
+ 
         Initially(
             When(OrderSubmitted)
                 .Then(ctx =>
@@ -51,6 +47,7 @@ public class OrderStateMachine : MassTransitStateMachine<OrderState>
                 // نستخدم Publish بدل Send: التوجيه عبر exchange نوع الرسالة يصل إلى طابور الـ consumer
                 // المرتبط به (ConfigureEndpoints)، فلا نحتاج عنونة endpoint صريحة.
                 .Publish(ctx => new ReserveStock(ctx.Saga.CorrelationId, ctx.Saga.OrderId, ctx.Saga.ProductId, ctx.Saga.Quantity))
+                // transition to the Submitted state
                 .TransitionTo(Submitted));
 
         // (2) بعد الحجز: نجاح الحجز -> أرسل ProcessPayment؛
